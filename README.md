@@ -22,3 +22,26 @@
 
 ### Real Drum
 * motion extraction + inference
+
+## Structure
+```
+utils.py
+solver.py
+real_data/
+    cube.avi
+    drum1.avi
+simulated_data/
+    defect1/
+        defect1_top_front_pluck.gif
+        true_stiffness.npy
+        true_density.npy
+comsol/
+    template.mph
+    run_comsol_sim.m
+demo_simulated_cube.ipynb
+demo_real_cube.ipynb
+demo_real_drum.ipynb
+```
+
+# TODOs
+* Add true weights to `simulated_data` and compare in `demo_simulated_cube.ipynb`.

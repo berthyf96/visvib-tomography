@@ -133,3 +133,6 @@ cython_debug/
 
 # Other
 .DS_Store
+
+# Data
+defect01/
