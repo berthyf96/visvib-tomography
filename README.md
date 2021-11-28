@@ -28,10 +28,13 @@
 utils.py
 solver.py
 real_data/
-    cube.avi
+    defect_cube/
+        top_front_pluck.avi
+        top_right_pluck.avi
+        left_side_twist.avi
     drum1.avi
 simulated_data/
-    defect1/
+    defect01/
         defect1_top_front_pluck.gif
         true_stiffness.npy
         true_density.npy
@@ -44,4 +47,5 @@ demo_real_drum.ipynb
 ```
 
 # TODOs
-* Add true weights to `simulated_data` and compare in `demo_simulated_cube.ipynb`.
+* Upload simulated data to Dropbox / Google Drive
+* damped simulation demo
