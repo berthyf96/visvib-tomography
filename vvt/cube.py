@@ -8,6 +8,18 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize
 
+def get_cube_model(xlen, ylen, zlen, nx, ny, nz, nu, degree=1):
+    '''Returns a Cube instance, assuming E = 1, rho = 1, nu = nu.'''
+    n_vox = nx * ny * nz
+    if np.isscalar(nu):
+        elem_nus = np.ones(n_vox) * nu
+    else:
+        elem_nus = nu
+    cube = Cube(
+        xlen, ylen, zlen, nx, ny, nz,
+        elem_Es=np.ones(n_vox), elem_rhos=np.ones(n_vox),
+        elem_nus=elem_nus, deg=degree)
+    return cube
 
 # Strain tensor
 def epsilon(v):
