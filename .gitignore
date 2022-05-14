@@ -135,5 +135,5 @@ cython_debug/
 .DS_Store
 
 # Data
-defect01/
-real_data/jello_cube
+simulated_data
+real_data

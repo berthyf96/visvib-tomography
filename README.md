@@ -1,10 +1,25 @@
 # Visual Vibration Tomography
-## Dependencies
+## Setup
+### Create conda environment
+```
+$ conda update conda
+$ conda create -n vvt python=3.7
+$ conda activate vvt
+```
+### Install dependencies
+```
+$ conda config --add channels conda-forge
+$ conda install -c conda-forge fenics
+$ conda install -c conda-forge jupyter matplotlib==3.4.2 tqdm opencv imageio
+$ conda install -c anaconda scipy
+$ pip install pyrtools
+```
 * python 3.7
 * conda install -c conda-forge fenics
 * conda install -c conda-forge notebook
 * conda install h5py
-* conda install -c conda-forge matplotlib==3.4.2
+<!-- * conda install -c conda-forge matplotlib==3.4.2 -->
+* conda install -c conda-forge matplotlib==2.2.4
 * conda install -c conda-forge tqdm
 * conda install -c conda-forge opencv
 * conda install -c anaconda scipy
@@ -41,6 +56,8 @@ simulated_data/
 comsol/
     template.mph
     run_comsol_sim.m
+scripts/
+    comsol_animation.py
 demo_simulated_cube.ipynb
 demo_real_cube.ipynb
 demo_real_drum.ipynb
