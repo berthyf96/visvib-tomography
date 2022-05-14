@@ -50,6 +50,37 @@ def interpolate_2d_motion(points, motion_2d, res=100, is_fill_nan=True):
 
     return interp_dx, interp_dy
 
+def project_points(pts, proj_matrix):
+    '''Project 3d points onto 2d space, given projection matrix.
+    Inputs:
+        pts -- 3d points, an array of size (N_PTS, 3)
+        proj_matrix -- projection matrix, an array of size (2, 3)
+    '''
+    projected_points = proj_matrix @ pts.T
+    return projected_points.T
+
+def project_and_interpolate_motion(points, motion_3d, proj_mat):
+    '''Project 3d motion onto 2d space and interpolate motion fields.
+    Inputs:
+        points: Coordinates to plot on image space, of shape (N_PTS , 2).
+        motion_3d: 3d motion field, of shape (N_PTS, 3).
+        proj_mat: 3d-to-2d projection matrix, of shape (2, 3).
+    Output:
+        interp_dx: Interpolated horizontal motion field in image space.
+        interp_dy: Interpolated vertical motion field in image space.
+    '''
+    if len(points) != len(motion_3d):
+        raise ValueError('len(points) != len(motion_3d)')
+    if proj_mat.shape[0] != 2 or proj_mat.shape[1] != 3:
+        raise ValueError('proj_mat must be of shape (2, 3).')
+
+    # Project 3d motion onto 2d image space.
+    motion_2d = project_points(motion_3d, proj_mat)
+
+    # Interpolate 2d motion.
+    interp_dx, interp_dy = interpolate_2d_motion(points, motion_2d)
+    return interp_dx, interp_dy
+
 def read_frames(vid_fn):
     '''Returns frames in specified GIF.'''
     if not os.path.exists(vid_fn):

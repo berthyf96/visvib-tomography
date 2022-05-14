@@ -18,7 +18,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 
 from cube import Cube
-from solver import Solver
+from vvt.solver import Solver
 
 
 
@@ -102,97 +102,6 @@ def plot_3d_cube(cube, weights, wmin=None, wmax=None, cmap=cm.viridis,
         clb.set_ticks([])
     
     return fig
-
-# -----------------------------------------------------------------------------
-# SOLVER UTILS
-# -----------------------------------------------------------------------------
-def laplacian_matrix_3d(nx, ny, nz):
-    '''Return a Laplacian matrix (L) for a 3d array.
-    L[i, j] = 1 iff i != j are adjacent in the 3d array of size
-    (nx, ny, nz).
-    L[i, i] = -deg(i).
-    '''
-    def _index(x, y, z):
-        return (nx*ny)*z + nx*y + x
-    nelems = nx * ny * nz
-    L = np.zeros((nelems, nelems))
-    for z in range(nz):
-        for y in range(ny):
-            for x in range(nx):
-                curr = _index(x, y, z)
-                if x > 0:
-                    up = _index(x-1, y, z)
-                    L[curr, up] = 1
-                if x < nx - 1:
-                    down = _index(x+1, y, z)
-                    L[curr, down] = 1
-                if y > 0:
-                    left = _index(x, y-1, z)
-                    L[curr, left] = 1
-                if y < ny - 1:
-                    right = _index(x, y+1, z)
-                    L[curr, right] = 1
-                if z > 0:
-                    bottom = _index(x, y, z-1)
-                    L[curr, bottom] = 1
-                if z < nz - 1:
-                    top = _index(x, y, z+1)
-                    L[curr, top] = 1
-                L[curr, curr]  = -np.count_nonzero(L[curr])
-    return L
-
-def full_projection_matrix(n_total_pts, proj_mat):
-    '''Create a full projection matrix that maps all DOFs onto image-space.
-    Inputs:
-        n_total_pts -- total number of points that would be mapped from
-            3d to 2d.
-        proj_mat (2, 3) -- 3d-to-2d projection matrix.
-    Output:
-        P (N_DOFS, N_DOFS) -- full projection matrix, that maps DOFs in 3d
-            to 2d image-space, where the 3rd dimension is always 0.
-    '''
-    P = np.kron(
-        np.eye(n_total_pts, dtype=int),
-        np.r_[proj_mat, np.zeros((1, 3))])
-    return P
-
-def full_mask_matrix(n_dofs, seen_dofs):
-    '''Return a binary matrix with 1s for DOFs seen in image-space.'''
-    G = np.zeros((n_dofs, n_dofs))
-    G[seen_dofs[::3], seen_dofs[::3]] = 1
-    G[seen_dofs[1::3], seen_dofs[1::3]] = 1
-    return G
-
-def get_solver(cube, proj_mat):
-    '''Initializes a Solver for the given Cube and projection matrix.'''
-    # Laplacian operator
-    L = laplacian_matrix_3d(cube.nx, cube.ny, cube.nz)
-
-    # voxel matrices
-    n_voxels = len(cube.element_stiffness_mats)
-    element_stiffness_mats, element_mass_mats = [], []
-    for (Ke, Me) in tqdm(zip(cube.element_stiffness_mats,
-                             cube.element_mass_mats), total=n_voxels,
-                            desc='Gather element mats'):
-        Ke_free = Ke.tocsr()[cube.nonbc_dofs].tocsc()[:, cube.nonbc_dofs].tocoo()
-        Me_free = Me.tocsr()[cube.nonbc_dofs].tocsc()[:, cube.nonbc_dofs].tocoo()
-        element_stiffness_mats.append(Ke_free.astype('float32'))
-        element_mass_mats.append(Me_free.astype('float32'))
-
-    # projection matrices
-    n_vts = cube.n_dofs // 3
-    proj_mat_normalized = proj_mat / abs(proj_mat).max()
-    P = full_projection_matrix(n_vts, proj_mat_normalized)
-    G = full_mask_matrix(cube.n_dofs, cube.image_space_dofs)
-    P_free = P[cube.nonbc_dofs][:, cube.nonbc_dofs]
-    G_free = G[cube.nonbc_dofs][:, cube.nonbc_dofs]
-
-    # Initialize solver.
-    s = Solver(
-        element_stiffness_mats, element_mass_mats, 
-        laplacian=L, P=P_free, G=G_free)
-    
-    return s
 
 
 def gather_modal_data_across_videos(info_dict_fns):

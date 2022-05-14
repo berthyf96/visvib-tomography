@@ -114,7 +114,7 @@ def get_fft_results(motion_fields, sample_rate, max_fft_freq=None, n_threads=1):
     elapsed_time = str(datetime.timedelta(seconds=time.time() - tic))
     print('Done! Elapsed time: %s' % elapsed_time)
 
-    return fft_u, fft_v, power_spectrum, 
+    return fft_u, fft_v, power_spectrum, ffreqs
     
 def gather_image_space_modes(fft_dx, fft_dy, fft_idxs, is_complex=False):
     '''Returns arrays of shape (N_MODES, H, W) of
