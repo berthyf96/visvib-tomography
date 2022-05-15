@@ -24,9 +24,9 @@ def plot_motion_field(motion_im, vmin=None, vmax=None,
         plot the image. These must be specified together, or not at all.
     """
     if vmin is None:
-        vmin = -abs(np.max(motion_im))
+        vmin = -np.max(abs(motion_im))
     if vmax is None:
-        vmax = abs(np.max(motion_im))
+        vmax = np.max(abs(motion_im))
     norm = mpl.colors.Normalize(vmin, vmax)
     if ax is not None:
         assert fig is not None
