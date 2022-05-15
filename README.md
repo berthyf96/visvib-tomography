@@ -40,14 +40,11 @@ $ pip install pyrtools
 
 ## Structure
 ```
-utils.py
-solver.py
 real_data/
     defect_cube/
         top_front_pluck.avi
         top_right_pluck.avi
         left_side_twist.avi
-    drum1.avi
 simulated_data/
     defect01/
         defect1_top_front_pluck.gif

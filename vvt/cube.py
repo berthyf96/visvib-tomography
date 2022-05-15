@@ -1,15 +1,39 @@
 import multiprocessing as mp
 
-import numpy as np
-from dolfin import *
-from scipy.sparse import coo_matrix
-from scipy.sparse.linalg import eigsh
-from tqdm import tqdm
+import matplotlib.colors
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
+import numpy as np
+import scipy.sparse
+
+from dolfin import *
+from tqdm import tqdm
 
 def get_cube_model(xlen, ylen, zlen, nx, ny, nz, nu, degree=1):
-    '''Returns a Cube instance, assuming E = 1, rho = 1, nu = nu.'''
+    """
+    Initialize a Cube object, assuming E=1, rho=1. With these default
+    Young's modulus and density values, the cube's element stiffness and mass
+    matrices have unit material properties and thus can be used when solving
+    for material properties.
+
+    Parameters
+    ----------
+    xlen, ylen, zlen: float
+        The dimensions of the box. Note that these do not have to be equal,
+        so the cube can be a box of any aspect ratio.
+    nx, ny, nz: int
+        The number of voxels in the x, y, and z directions, respectively.
+    nu: float, between 0.1 and 0.45
+        The homogeneous Poisson's ratio of the cube.
+    degree: int, default=1
+        The element order of the cube mesh. E.g., `degree=1` corresponds to
+        linear elements.
+
+    Returns
+    -------
+    cube: Cube
+        A Cube object that corresponds to the given parameters and has 
+        homogeneous material properties E=1, rho=1, and nu=`nu`.
+    """
     n_vox = nx * ny * nz
     if np.isscalar(nu):
         elem_nus = np.ones(n_vox) * nu
@@ -52,8 +76,9 @@ def element_stiffness_mat(cell_idx, xlen, ylen, zlen, nx, ny, nz, elem_nus, deg=
         for j in range(n_cell_dofs):
             global_i.append(cell_to_global_dof_map[i])
             global_j.append(cell_to_global_dof_map[j])
-    K_global = coo_matrix((K_local.flatten(), (global_i, global_j)),
-                           shape=(n_vts*3, n_vts*3))
+    K_global = scipy.sparse.coo_matrix(
+        (K_local.flatten(), (global_i, global_j)),
+        shape=(n_vts*3, n_vts*3))
     return K_global, K_local.flatten(), global_i, global_j
 
 def element_mass_mat(cell_idx, xlen, ylen, zlen, nx, ny, nz, deg=1):
@@ -77,27 +102,34 @@ def element_mass_mat(cell_idx, xlen, ylen, zlen, nx, ny, nz, deg=1):
         for j in range(n_cell_dofs):
             global_i.append(cell_to_global_dof_map[i])
             global_j.append(cell_to_global_dof_map[j])
-    M_global = coo_matrix((M_local.flatten(), (global_i, global_j)),
-                           shape=(n_vts*3, n_vts*3))
+    M_global = scipy.sparse.coo_matrix(
+        (M_local.flatten(), (global_i, global_j)),
+        shape=(n_vts*3, n_vts*3))
     return M_global, M_local.flatten(), global_i, global_j
 
 
 class Cube:
     def __init__(self, xlen, ylen, zlen, nx, ny, nz,
                  elem_Es, elem_rhos, elem_nus, deg=1):
-        '''
-        Params:
-            xlen (float): Length of box along x-axis.
-            ylen (float): Length of box along y-axis.
-            zlen (float): Length of box along z-axis.
-            nx (int): Number of cells in x direction.
-            ny (int): Number of cells in y direction.
-            nz (int): Number of cells in z direction.
-            elem_Es (1d array): Young's modulus for each cell.
-            elem_rhos (1d array): Density for each cell.
-            elem_nus (1d array): Poisson's ratio for each cell.
-            deg (int): Degree of Lagrangian shape function.
-        '''
+        """
+        Initialize a Cube object, which is primarily defined by a
+        FEniCS BoxMesh and mesh-element-wise material properties.
+
+        Parameters
+        ----------
+        xlen, ylen, zlen: float
+            The length of the box in the x, y, and z directions, respectively.
+        nx, ny, nz: int
+            The number of voxels in the x, y, and z directions, respectively.
+        elem_Es: np.array or list
+            The Young's modulus value of each voxel.
+        elem_rhos: np.array or list
+            The density value of each voxel.
+        elem_nus: np.array or list
+            The Poisson's ratio of each voxel.
+        deg: int, default=1
+            The mesh element order, i.e., degree of the Largrangian shape function.
+        """
         n_elems = nx * ny * nz
         assert len(elem_Es) == n_elems
         assert len(elem_rhos) == n_elems
@@ -154,8 +186,16 @@ class Cube:
             if dof not in self.image_space_dofs]
 
     def get_image_space_dofs(self):
-        '''Get DOFs in the order of the user-selected visible mesh
-        vertices in image.space'''
+        """
+        Get DOFs in the order of the user-selected visible mesh vertices in
+        image-space.
+
+        Returns
+        -------
+        image_space_dofs: np.array
+            A 1D numpy array of the visible DOFs, in the order in which they
+            appear in image-space.
+        """
         def _inview(x):
             return (near(x[1], 0) or near(x[0], self.xlen)
                     or near(x[2], self.zlen))
@@ -180,7 +220,17 @@ class Cube:
         return image_space_dofs
 
     def get_stiffness_mats(self):
-        '''Assemble and return element stiffness matrices.'''
+        """
+        Assemble and return the element stiffness matrices.
+
+        Returns
+        -------
+        element_mats: list of scipy.sparse.coo_matrix's
+            All of the element stiffness matrices. Each matrix, stored as a
+            COO sparse matrix, is of size (N_DOFS x N_DOFS) and assembled
+            according to the Young's modulus value of the voxel to which it
+            belongs.
+        """
         pool = mp.Pool(mp.cpu_count())
         results = [pool.apply(element_stiffness_mat,
                               args=(cell_idx, self.xlen, self.ylen, self.zlen,
@@ -193,7 +243,16 @@ class Cube:
         return element_mats
 
     def get_mass_mats(self):
-        '''Assemble and return element mass matrices.'''
+        """
+        Assemble and return the element mass matrices.
+
+        Returns
+        -------
+        element_mats: list of scipy.sparse.coo_matrix's
+            All of the element mass matrices. Each matrix, stored as a
+            COO sparse matrix, is of size (N_DOFS x N_DOFS) and assembled
+            according to the density of the voxel to which it belongs.
+        """
         pool = mp.Pool(mp.cpu_count())
         results = [pool.apply(element_mass_mat,
                               args=(cell_idx, self.xlen, self.ylen, self.zlen,
@@ -205,10 +264,32 @@ class Cube:
         return element_mats
     
     def solve_modes(self, K, M, apply_bc=True, neig=6):
+        """
+        Compute the eigensolutions of the generalized eigenvalue equation.
+
+        Parameters
+        ----------
+        K: ndarray or scipy.sparse matrix
+            The global stiffness matrix, of size (N_DOFS x N_DOFS).
+        M: ndarray or scipy.sparse matrix
+            The global mass matrix, of size (N_DOFS x N_DOFS).
+        apply_bc: bool, default=True
+            Whether to strictly apply the Dirichlet boundary condition by
+            removing boundary DOFs from the equation.
+        neig: int, default=6
+            Number of eigensolutions to compute.
+
+        Returns
+        -------
+        evals: np.array
+            The list of eigenvalues, sorted in increasing order.
+        evecs: np.ndarray of shape (N_DOFS, n_eig)
+            The full-field eigenvectors, sorted in increasing eigenvalue order.
+        """
         if apply_bc:
-            K = K[self.nonbc_dofs,:][:,self.nonbc_dofs]
-            M = M[self.nonbc_dofs,:][:,self.nonbc_dofs]
-        w, v = eigsh(K, neig, M, sigma=1e-3)
+            K = K[self.nonbc_dofs, :][:, self.nonbc_dofs]
+            M = M[self.nonbc_dofs, :][:, self.nonbc_dofs]
+        w, v = scipy.sparse.linalg.eigsh(K, neig, M, sigma=1e-3)
         sort_idx = np.argsort(w)
         evals = w[sort_idx]
         evecs = v[:, sort_idx]
@@ -219,23 +300,55 @@ class Cube:
         return evals, evecs
         
     def layer_weights(self, weights, layer):
+        """
+        Retrieve the voxel values for a specific z-layer of the cube.
+
+        Parameters
+        ----------
+        weights: np.ndarray
+            A 1D numpy array containing the voxel values for the entire cube.
+        layer: int
+            The 0-indexed z-layer of which to retrieve the voxel values.
+
+        Returns
+        -------
+        layer_weights: np.ndarray
+            A 2D numpy array representing an image of the voxel values at the
+            specified layer.
+        """
         w3d = weights.reshape(self.nz, self.ny, self.nx)
-        layer = w3d[layer]
-        return layer
+        layer_weights = w3d[layer]
+        return layer_weights
         
-    def plot_2d(self, weights=None, wmin=None, wmax=None, cmap='viridis',
+    def plot_2d(self, weights=None, vmin=None, vmax=None, cmap='viridis',
                 cbar=True):
+        """
+        Plot a 2D visualization of the material-property values throughout
+        the cube.
+
+        Parameters
+        ----------
+        weights: np.ndarray
+            A 1D numpy array containing the voxel-wise material-property values.
+        vmin, vmax: float, optional
+            The range of values to be covered by the colormap. By default,
+            the colormap will cover the entire range of values in `weights`.
+        cmap: str, default='viridis'
+            A string identifier for the desired colormap.
+        cbar: bool, default=True
+            Whether to include the colorbar in the plot.
+        """
         if weights is None:
             weights = self.elem_Es
-        if wmin is None:
-            wmin = weights.min()
-        if wmax is None:
-            wmax = weights.max()
-        W = np.zeros((self.ny, self.nx*self.nz))
+        if vmin is None:
+            vmin = np.min(weights)
+        if vmax is None:
+            vmax = np.max(weights)
+        W = np.zeros((self.ny, self.nx * self.nz))
         for z in range(self.nz):
             layer = self.layer_weights(weights, z)
-            W[:, z*self.nx:(z+1)*self.nx] = layer
-        norm = Normalize(vmin=wmin, vmax=wmax)
+            W[:, z * self.nx : (z + 1) * self.nx] = layer
+        norm = matplotlib.colors.Normalize(vmin=vmin, vmax=vmax)
         plt.imshow(W, origin='lower', cmap=cmap, norm=norm)
         if cbar:
-            plt.colorbar(orientation='horizontal', ticks=[wmin, wmax])
+            plt.colorbar(orientation='horizontal', ticks=[vmin, vmax])

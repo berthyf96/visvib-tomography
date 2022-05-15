@@ -50,15 +50,6 @@ def interpolate_2d_motion(points, motion_2d, res=100, is_fill_nan=True):
 
     return interp_dx, interp_dy
 
-def project_points(pts, proj_matrix):
-    '''Project 3d points onto 2d space, given projection matrix.
-    Inputs:
-        pts -- 3d points, an array of size (N_PTS, 3)
-        proj_matrix -- projection matrix, an array of size (2, 3)
-    '''
-    projected_points = proj_matrix @ pts.T
-    return projected_points.T
-
 def project_and_interpolate_motion(points, motion_3d, proj_mat):
     '''Project 3d motion onto 2d space and interpolate motion fields.
     Inputs:
@@ -75,7 +66,7 @@ def project_and_interpolate_motion(points, motion_3d, proj_mat):
         raise ValueError('proj_mat must be of shape (2, 3).')
 
     # Project 3d motion onto 2d image space.
-    motion_2d = project_points(motion_3d, proj_mat)
+    motion_2d = utils.project_points(motion_3d, proj_mat)
 
     # Interpolate 2d motion.
     interp_dx, interp_dy = interpolate_2d_motion(points, motion_2d)

@@ -1,5 +1,10 @@
+import io
+
+import cv2
+import imageio
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import LinearNDInterpolator
 from scipy.sparse import coo_matrix
 
 def get_chunk_sizes(n_items, n_threads):
@@ -139,3 +144,46 @@ def weighted_sum(arrays, weights, is_coo=True):
     for (wi, Ai) in zip(weights, arrays):
         res += wi * Ai
     return res
+
+def project_points(pts, proj_matrix):
+    '''Project 3d points onto 2d space, given projection matrix.
+    Inputs:
+        pts -- 3d points, an array of size (N_PTS, 3)
+        proj_matrix -- projection matrix, an array of size (2, 3)
+    '''
+    projected_points = proj_matrix @ pts.T
+    return projected_points.T
+
+def interp_3d_data(data_points, data_values, query_points):
+    '''Interpolate 3D function and return query values.
+    Inputs:
+        data_points (N_points, 3) -- sampled known points.
+        data_values (N_points, N_dim) -- values of sampled points.
+        query_points (N_query_points, 3) -- requested interpolated points.
+    '''
+    interp = LinearNDInterpolator(
+        (data_points[:, 0], data_points[:, 1], data_points[:, 2]),
+        data_values)
+    yhat = interp(query_points[:, 0], query_points[:, 1], query_points[:, 2])
+    yhat[np.isnan(yhat)] = 0
+    return yhat
+
+def fig_to_im(fig, dpi=180, is_grayscale=False, transparent=False):
+    '''Returns an ndarray of the matplotlib figure image.
+    Source: https://stackoverflow.com/questions/7821518/matplotlib-save-plot-to-numpy-array
+    '''
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=dpi, transparent=transparent)
+    buf.seek(0)
+    im_arr = np.frombuffer(buf.getvalue(), dtype=np.uint8)
+    buf.close()
+    if is_grayscale:
+        im = cv2.imdecode(im_arr, 0)
+    else:
+        im = cv2.imdecode(im_arr, 1)
+    return im
+
+def ims_to_gif(out_fn, images, **kwargs):
+    '''Writes GIFs of given list of images to specified output file.'''
+    imageio.mimsave(out_fn, images, **kwargs)
+    return
