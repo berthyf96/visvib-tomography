@@ -53,6 +53,15 @@ The real Jello cube data can be downloaded from [Box](https://caltech.box.com/s/
 </p>
 <p align='center'>(Paper Fig. 11) Reconstructed material properties.</p>
 
+## Animations
+A script is provided to make an animated video from COMSOL transient analysis results. Run
+```
+$ python make_comsol_animation.py {OBJ_NAME} {SIM_NAME}
+```
+where `OBJ_NAME` is the cube sample (e.g., "defect_01"), and `SIM_NAME` is the transient-analysis name (e.g., "top_front_pluck"). The script writes a GIF named `transient.gif` in the same folder that contains the `transient.mat` file.
+
+**WARNING:** The animation script was tested with `matplotlib==2.2.4` and is not guaranteed to work for other versions.
+
 ## Simulated Dataset
 The [simulated dataset](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl) 
 contains 12 different defect cubes. `defect01-defect12` 
@@ -78,8 +87,13 @@ material-property estimation, but can be used to check
 the true full-field modes of the object.
 
 An animated video takes up a lot of storage (~1.2 GB), so we provide a
-limited number of pre-written videos. The objects that have animated videos
-included are:
-* `defect_03`
-* `defect_08`
-* `damped_defect_03`
+limited number of pre-written videos, specifically for: `defect_03`, `defect_08`, and `damped_defect_03`.
+
+## Notes
+The easiest results to reproduce with this repo are reconstructions for `simulated_data/defect_03` and `real_data/jello_cube`. The paper includes figures for other cases, including damped cubes and simulated/real drums.
+
+### Damped cubes
+The best way to work with damped cubes (e.g., `simulated_data/damped_defect01`) is to follow the process for the real Jello cube, i.e., with `demo2.1_real_cube_mode_extraction.ipynb` and `demo2.2_real_cube_inference.ipynb`. The video names and FPS will have to be specified accordingly, and the modal observations require some amount of qualitative hand-selection.
+
+### Drums
+For clarity, we provide code for working with cubes. Please contact bfeng@caltech.edu if you would like code for working with drums or other geometries.
