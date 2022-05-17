@@ -18,8 +18,7 @@ $ pip install pyrtools
 * conda install -c conda-forge fenics
 * conda install -c conda-forge notebook
 * conda install h5py
-<!-- * conda install -c conda-forge matplotlib==3.4.2 -->
-* conda install -c conda-forge matplotlib==2.2.4
+* conda install -c conda-forge matplotlib==3.4.2 (2.2.4 for animation)
 * conda install -c conda-forge tqdm
 * conda install -c conda-forge opencv
 * conda install -c anaconda scipy
@@ -27,39 +26,61 @@ $ pip install pyrtools
 * pip install pyrtools
 
 ## Demos
-### Simulated Cube
-* COMSOL transient analysis
-* animation creation
-* motion extraction + inference
+### Simulated cube
+<center>
+<br>
+<img src="./assets/nmodes_1.png" alt="Reconstructions" width="600"/>
+<br>
+<em>(Fig. 4) Reconstruction of "defect03" as number of input modes increases.</em>
+</center>
+The notebook `demo1_simulated_cube.ipynb` walks through end-to-end estimation
+from an input video. Simulated cube data can be downloaded from [Box](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl). The demo notebook specifically works with `defect03`.
 
-### Real Cube
-* motion extraction + inference
+### Real/damped cube
+<center
+<p>
+  <img src="./assets/real_cube_recon.png" alt="Jello Cube Recon." width="300"/>
+</p>
+</center>
+<center><em>(Fig. 11) Reconstructed material properties.</em></center>
+A damped cube typically requires modal observations from multiple videos. 
+As such, we split the process into two notebooks:
+1. `demo2.1_real_cube_mode_extraction.ipynb` walks through motion and image-space mode
+extraction from one video. The notebook can be repeatedly run for multiple videos
+of the same object, saving modal observations from each one.
+2. `demo2.2_real_cube_inference.ipynb` takes the modal observations from multiple
+videos and averages them to solve for material properties.
 
-### Real Drum
-* motion extraction + inference
+The real Jello cube data can be downloaded from here: https://caltech.box.com/s/ii4qejdnypagmg18pbi2usk1i4hky41c. Modal observations are included, so step (1) can be skipped.
 
-## Structure
-```
-real_data/
-    defect_cube/
-        top_front_pluck.avi
-        top_right_pluck.avi
-        left_side_twist.avi
-simulated_data/
-    defect01/
-        defect1_top_front_pluck.gif
-        true_stiffness.npy
-        true_density.npy
-comsol/
-    template.mph
-    run_comsol_sim.m
-scripts/
-    comsol_animation.py
-demo_simulated_cube.ipynb
-demo_real_cube.ipynb
-demo_real_drum.ipynb
-```
+## Simulated Dataset
+The simulated dataset can be downloaded from here: https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl.
 
-# TODOs
-* Upload simulated data to Dropbox / Google Drive
-* damped simulation demo
+The dataset contains 12 different defect cubes. `defect01-defect12` 
+are the undamped versions, and `damped_defect01-damped_defect12` are the damped
+versions. Additionally, `defect_center` is an undamped cube with a perfectly-centered
+defect.
+
+The data for each object is stored in a folder (e.g., `simulated_data/defect01`)
+that contains the following files:
+* `true_stiffness.npy`, `true_density.npy`: The true material properties used in
+the forward model. The forward model is a 10x10x10 hexahedral mesh, so each 
+file is a 1D NumPy array containing the voxel-wise material-property values.
+* `{initial_condition}/transient.mat`: The COMSOL transient analysis results
+for a particular initial condition. This file is used to create the animated
+video, `{initial_condition}/transient.mat`. Since the undamped cubes have sufficient
+modal expression from one initial condition, only the `top_front_pluck` transient
+analysis results are included. The damped cubes may need modal information from
+multiple videos, so the transient analysis results of 5 initial conditions are 
+provided: `top_front_pluck`, `top_back_pluck`, `top_right_pluck`, `top_left_pluck`,
+`top_right_twist`.
+* `modal.mat`: The COMSOL modal analysis results. This file is not used in
+material-property estimation, but can be used to check
+the true full-field modes of the object.
+
+An animated video takes up a lot of storage (~1.2 GB), so we provide a
+limited number of pre-written videos. The objects that have animated videos
+included are:
+* `defect_03`
+* `defect_08`
+* `damped_defect_03`
