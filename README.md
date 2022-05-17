@@ -33,7 +33,7 @@ from an input video. Simulated cube data can be downloaded from [Box](https://ca
 <p align='center'>
     <img src="./assets/nmodes_1.png" alt="Reconstructions" width="600"/>
 </p>
-<p align='center'>(Fig. 4) Reconstruction of "defect03" as number of input modes increases.</p>
+<p align='center'>(Paper Fig. 4) Reconstruction of "defect03" as number of input modes increases.</p>
 
 
 ### Demo: real/damped cube
@@ -48,13 +48,10 @@ videos and averages them to solve for material properties.
 
 The real Jello cube data can be downloaded from [Box](https://caltech.box.com/s/ii4qejdnypagmg18pbi2usk1i4hky41c). Modal observations are included, so step (1) can be skipped.
 
-<center>
-<p>
+<p align='center'>
     <img src="./assets/real_cube_recon.png" alt="Jello Cube Recon." width="300"/>
 </p>
-</center>
-<center><em>(Fig. 11) Reconstructed material properties.</em></center>
-<br>
+<p align='center'>(Paper Fig. 11) Reconstructed material properties.</p>
 
 ## Simulated Dataset
 The [simulated dataset](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl) 
