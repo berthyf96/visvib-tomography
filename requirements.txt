@@ -1,0 +1,7 @@
+fenics==2019.1.0
+jupyter
+matplotlib>=3.4.2
+tqdm
+opencv
+imageio
+scipy>=1.7.1

@@ -1,10 +1,16 @@
 # Visual Vibration Tomography
+[Project Website](http://imaging.cms.caltech.edu/vvt/) | [PDF](https://arxiv.org/pdf/2104.02735.pdf)
+
+Berthy T. Feng, Alexander C. Ogren, Chiara Daraio, Katherine L. Bouman. "Visual Vibration Tomography: Estimating Interior Material Properties from Monocular Video." In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2022 (**Oral**).
+
 ## Setup
 ### Create conda environment
 ```
 $ conda update conda
 $ conda create -n vvt python=3.7
 $ conda activate vvt
+$ conda config --add channels conda-forge
+$ conda config --add channels anaconda
 ```
 ### Install dependencies
 ```
@@ -16,7 +22,7 @@ $ pip install pyrtools
 ```
 * python 3.7
 * conda install -c conda-forge fenics
-* conda install -c conda-forge notebook
+* conda install -c conda-forge jupyter
 * conda install h5py
 * conda install -c conda-forge matplotlib==3.4.2 (2.2.4 for animation)
 * conda install -c conda-forge tqdm
@@ -54,7 +60,7 @@ The real Jello cube data can be downloaded from [Box](https://caltech.box.com/s/
 <p align='center'>(Paper Fig. 11) Reconstructed material properties.</p>
 
 ## Animations
-A script is provided to make an animated video from COMSOL transient analysis results. Run
+To make an animated video from COMSOL transient analysis results, run
 ```
 $ python make_comsol_animation.py {OBJ_NAME} {SIM_NAME}
 ```
@@ -76,7 +82,7 @@ the forward model. The forward model is a 10x10x10 hexahedral mesh, so each
 file is a 1D NumPy array containing the voxel-wise material-property values.
 * `{initial_condition}/transient.mat`: The COMSOL transient analysis results
 for a particular initial condition. This file is used to create the animated
-video, `{initial_condition}/transient.mat`. Since the undamped cubes have sufficient
+video, `{initial_condition}/transient.gif`. Since the undamped cubes have sufficient
 modal expression from one initial condition, only the `top_front_pluck` transient
 analysis results are included. The damped cubes may need modal information from
 multiple videos, so the transient analysis results of 5 initial conditions are 
@@ -97,3 +103,8 @@ The best way to work with damped cubes (e.g., `simulated_data/damped_defect01`) 
 
 ### Drums
 For clarity, we provide code for working with cubes. Please contact bfeng@caltech.edu if you would like code for working with drums or other geometries.
+
+## TODOs
+* Make Conda environment on MacBook
+* Test animation script
+* Test notebooks
