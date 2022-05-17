@@ -27,6 +27,9 @@ $ pip install pyrtools
 
 ## Demos
 ### Demo: simulated cube
+The notebook `demo1_simulated_cube.ipynb` walks through end-to-end estimation
+from an input video. Simulated cube data can be downloaded from [Box](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl). The demo notebook specifically works with `defect03`.
+
 <center>
 <br>
 <img src="./assets/nmodes_1.png" alt="Reconstructions" width="600"/>
@@ -35,17 +38,7 @@ $ pip install pyrtools
 </center>
 <br>
 
-The notebook `demo1_simulated_cube.ipynb` walks through end-to-end estimation
-from an input video. Simulated cube data can be downloaded from [Box](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl). The demo notebook specifically works with `defect03`.
-
 ### Demo: real/damped cube
-<center
-<p>
-  <img src="./assets/real_cube_recon.png" alt="Jello Cube Recon." width="300"/>
-</p>
-</center>
-<center><em>(Fig. 11) Reconstructed material properties.</em></center>
-<br>
 
 A damped cube typically requires modal observations from multiple videos. 
 As such, we split the process into two notebooks:
@@ -56,6 +49,14 @@ of the same object, saving modal observations from each one.
 videos and averages them to solve for material properties.
 
 The real Jello cube data can be downloaded from [Box](https://caltech.box.com/s/ii4qejdnypagmg18pbi2usk1i4hky41c). Modal observations are included, so step (1) can be skipped.
+
+<center>
+<p>
+  <img src="./assets/real_cube_recon.png" alt="Jello Cube Recon." width="300"/>
+</p>
+</center>
+<center><em>(Fig. 11) Reconstructed material properties.</em></center>
+<br>
 
 ## Simulated Dataset
 The [simulated dataset](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl) 
