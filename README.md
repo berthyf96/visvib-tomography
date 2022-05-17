@@ -26,23 +26,27 @@ $ pip install pyrtools
 * pip install pyrtools
 
 ## Demos
-### Simulated cube
+### Demo: simulated cube
 <center>
 <br>
 <img src="./assets/nmodes_1.png" alt="Reconstructions" width="600"/>
 <br>
 <em>(Fig. 4) Reconstruction of "defect03" as number of input modes increases.</em>
 </center>
+<br>
+
 The notebook `demo1_simulated_cube.ipynb` walks through end-to-end estimation
 from an input video. Simulated cube data can be downloaded from [Box](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl). The demo notebook specifically works with `defect03`.
 
-### Real/damped cube
+### Demo: real/damped cube
 <center
 <p>
   <img src="./assets/real_cube_recon.png" alt="Jello Cube Recon." width="300"/>
 </p>
 </center>
 <center><em>(Fig. 11) Reconstructed material properties.</em></center>
+<br>
+
 A damped cube typically requires modal observations from multiple videos. 
 As such, we split the process into two notebooks:
 1. `demo2.1_real_cube_mode_extraction.ipynb` walks through motion and image-space mode
@@ -51,12 +55,11 @@ of the same object, saving modal observations from each one.
 2. `demo2.2_real_cube_inference.ipynb` takes the modal observations from multiple
 videos and averages them to solve for material properties.
 
-The real Jello cube data can be downloaded from here: https://caltech.box.com/s/ii4qejdnypagmg18pbi2usk1i4hky41c. Modal observations are included, so step (1) can be skipped.
+The real Jello cube data can be downloaded from [Box](https://caltech.box.com/s/ii4qejdnypagmg18pbi2usk1i4hky41c). Modal observations are included, so step (1) can be skipped.
 
 ## Simulated Dataset
-The simulated dataset can be downloaded from here: https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl.
-
-The dataset contains 12 different defect cubes. `defect01-defect12` 
+The [simulated dataset](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl) 
+contains 12 different defect cubes. `defect01-defect12` 
 are the undamped versions, and `damped_defect01-damped_defect12` are the damped
 versions. Additionally, `defect_center` is an undamped cube with a perfectly-centered
 defect.
