@@ -30,13 +30,11 @@ $ pip install pyrtools
 The notebook `demo1_simulated_cube.ipynb` walks through end-to-end estimation
 from an input video. Simulated cube data can be downloaded from [Box](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl). The demo notebook specifically works with `defect03`.
 
-<center>
-<br>
-<img src="./assets/nmodes_1.png" alt="Reconstructions" width="600"/>
-<br>
-<em>(Fig. 4) Reconstruction of "defect03" as number of input modes increases.</em>
-</center>
-<br>
+<p align='center'>
+    <img src="./assets/nmodes_1.png" alt="Reconstructions" width="600"/>
+</p>
+<p align='center'>(Fig. 4) Reconstruction of "defect03" as number of input modes increases.</p>
+
 
 ### Demo: real/damped cube
 
@@ -52,7 +50,7 @@ The real Jello cube data can be downloaded from [Box](https://caltech.box.com/s/
 
 <center>
 <p>
-  <img src="./assets/real_cube_recon.png" alt="Jello Cube Recon." width="300"/>
+    <img src="./assets/real_cube_recon.png" alt="Jello Cube Recon." width="300"/>
 </p>
 </center>
 <center><em>(Fig. 11) Reconstructed material properties.</em></center>
