@@ -14,19 +14,27 @@ from scipy.signal import fftconvolve
 import vvt.utils as utils
 
 def interpolate_2d_motion(points, motion_2d, res=100, is_fill_nan=True):
-    '''Interpolate a 2D motion field between known motion at given points.
-    Inputs:
-        points -- array of size (N_PTS, 2) with the coordinates of
-            the known points.
-        motion_2d -- array of size (N_PTS, 2) with the (x, y) displacement
-            for each of the known points.
-        res -- number of pixels (in both x and y direction)
-            in interpolation grid.
-        is_fill_nan -- whether to 0-fill NaNs.
-    Output:
-        interp_dx -- interpolated horizontal displacement field.
-        interp_dy -- interpolated vertical displacement field.
-    '''
+    """
+    Interpolate a 2D motion field between known motion at given points.
+
+    Parameters
+    ----------
+    points: np.ndarray of shape (N_PTS, 2)
+        The 2D coordinates of the points with known motion.
+    motion_2d: np.ndarray of shape (N_PTS, 2)
+        The (x, y) displacement of each of the known points.
+    res: int, default=100
+        Number of pixels (in both the x and y directions) in the
+        interpolation grid.
+    is_fall_nan: bool, default=True
+        Whether to 0-fill NaNs for the interpolated values.
+
+    Returns
+    -------
+    interp_dx, interp_dy: np.ndarray of shape (RES, RES)
+        The interpolated horizontal and vertical displacement fields,
+        respectively.
+    """
     if len(points) != len(motion_2d):
         raise ValueError('len(points) != len(motion_2d)')
     
@@ -51,15 +59,25 @@ def interpolate_2d_motion(points, motion_2d, res=100, is_fill_nan=True):
     return interp_dx, interp_dy
 
 def project_and_interpolate_motion(points, motion_3d, proj_mat):
-    '''Project 3d motion onto 2d space and interpolate motion fields.
-    Inputs:
-        points: Coordinates to plot on image space, of shape (N_PTS , 2).
-        motion_3d: 3d motion field, of shape (N_PTS, 3).
-        proj_mat: 3d-to-2d projection matrix, of shape (2, 3).
-    Output:
-        interp_dx: Interpolated horizontal motion field in image space.
-        interp_dy: Interpolated vertical motion field in image space.
-    '''
+    """
+    Project 3D motion onto 2D space and interpolate the motion fields.
+
+    Parameters
+    ----------
+    points: np.ndarray of shape (N_PTS, 2)
+        The image-space coordinates of the points with known motion.
+    motion_3d: np.ndarray of shape (N_PTS, 3)
+        The 3D displacements of each known point.
+    proj_mat: np.ndarray of shape (2, 3)
+        3D-to-2D projetion matrix.
+
+    Returns
+    -------
+    interp_dx, interp_dy: np.ndarray of shape (100, 100)
+        The interpolated horizontal and vertical displacement fields,
+        respectively. The interpolation grid by default has resolution
+        100x100.
+    """
     if len(points) != len(motion_3d):
         raise ValueError('len(points) != len(motion_3d)')
     if proj_mat.shape[0] != 2 or proj_mat.shape[1] != 3:
@@ -73,7 +91,19 @@ def project_and_interpolate_motion(points, motion_3d, proj_mat):
     return interp_dx, interp_dy
 
 def read_frames(vid_fn):
-    '''Returns frames in specified GIF.'''
+    """
+    Read and collect the frames of the given video file.
+
+    Parameters
+    ----------
+    vid_fn: str
+        The filename of the video (so far tested on .gif and .avi videos).
+    
+    Returns
+    -------
+    frames: list of np.ndarray
+        A list of the video frames (stored as 2D numpy arrays).
+    """
     if not os.path.exists(vid_fn):
         raise FileNotFoundError(vid_fn)
     
@@ -108,9 +138,10 @@ def nonoutlier_mask(val_arr, pct=98):
     return mask
 
 def _extract_motion_frame(frame, reference_frame, filter_pct, n_orients=2):
-    '''Returns the horizontal and vertical displacement of given frame from
+    """
+    Return the horizontal and vertical displacement of given frame from
     reference frame.
-    '''
+    """
     pyr_ref = pt.pyramids.SteerablePyramidFreq(
         reference_frame, order=n_orients-1, is_complex=True)
     pyr = pt.pyramids.SteerablePyramidFreq(
@@ -155,19 +186,31 @@ def _extract_motion_slice(motion_fields, slice_frames, slice_idxs,
             tic = time.time()
 
 def extract_motion(frames, reference_frame, filter_pct=99, n_threads=1):
-    '''Extracts horizontal and vertical displacement field for each frame, from 
-    the reference frame. This phase-based motion extraction uses
-    complex steerable pyramids with n_scales=1 and n_orients=2.
-    Args:
-        frames -- list of images.
-        reference_frame -- reference frame, usually first frame.
-        filter_pct -- for each frame, any displacement above this percentile
-            is removed.
-        n_threads -- number of threads to use.
-    Outputs:
-        motion_fields (2, T, H, W) -- horizontal and vertical displacement
-            for each frame.
-    '''
+    """
+    Exract the horizontal and vertical displacement field for each frame,
+    from the reference frame. This phase-based motion extraction uses
+    complex steerable pyramids (CSPs) with 1 scale and 2 orientations.
+
+    Parameters
+    ----------
+    frames: list of np.ndarray
+        List of video frames, each stored as a 2D numpy array.
+    reference_frame: np.ndarray
+        The 2D numpy array of the reference frame from which to compute 
+        displacements.
+    filter_pct: int, default=99
+        For each frame, any displacement above this percentile is removed.
+        Lower values result in more outliers being removed.
+    n_threads: int, default=1
+        Number of threads to use. This function can easily be multithreaded
+        by chunking the frames and passing each chunk to a different thread.
+
+    Returns
+    -------
+    motion_fields: np.ndarray of shape (2, T, H, W)
+        The horizontal (`motion_fields[0]`) and vertical displacement
+        (`motion_fields[1]`) of each pixel in each frame.
+    """
     tic = time.time()
     T = len(frames)
     h, w = frames[0].shape
@@ -231,17 +274,31 @@ def _weighted_gaussian_smooth_slice(motion_fields, slice_idxs,
             print(msg, flush=True)
             tic = time.time()
 
-def weighted_gaussian_smooth(motion_fields, reference_frame, sigma=3, n_threads=1):
-    '''Apply Gaussian kernel weighted by amplitude. 
-    his will modify the images in-place.
-    Args:
-        motion_fields (2, T, H, W) -- list of motion field images.
-        reference_frame -- reference image used to create amplitude masks.
-        sigma -- std. dev. of Gaussian kernel, in pixels.
-        n_threads -- number of threads to use.
-    Output:
-        smooth_motion_fields -- list of smoothed motion field images.
-    '''
+def weighted_gaussian_smooth(motion_fields, reference_frame, sigma=3,
+                             n_threads=1):
+    """
+    Apply a Gaussian smoothing kernal weighted by amplitude. This function
+    modifies images in-place.
+
+    Parameters
+    ----------
+    motion_fields: np.ndarray of shape (2, T, H, W)
+        The horizontal (`motion_fields[0]`) and vertical displacement
+        (`motion_fields[1]`) of each pixel in each frame.
+    reference_frame: np.ndarray
+        The 2D numpy array of the reference frame from which to compute 
+        displacements.
+    sigma: float, default=3
+        Std. dev. of the Gaussian kernel, in pixels.
+    n_threads: int, default=1
+        Number of threads to use. This function can easily be multithreaded
+        by chunking the frames and passing each chunk to a different thread.
+
+    Returns
+    -------
+    smooth_motion_fields: np.ndarray of shape (2, T, H, W)
+        The spatially-smoothed motion fields across time.
+    """
     tic = time.time()
 
     # Get amplitude mask (depending on horizontal or vertical direction).
