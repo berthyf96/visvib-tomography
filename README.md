@@ -88,7 +88,7 @@ defect shape and location, and material properties.
 `comsol/run_comsol_sim.m` takes the COMSOL file, run transient analyses
 and a modal analysis, and saves the results of these analyses.
 
-## Animation Script
+### Animation script
 To make an animated video from COMSOL transient analysis results, run
 ```
 $ python make_comsol_animation.py {OBJ_NAME} {SIM_NAME}
