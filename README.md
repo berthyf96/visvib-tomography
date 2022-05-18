@@ -1,5 +1,5 @@
 # Visual Vibration Tomography
-[Project Page](http://imaging.cms.caltech.edu/vvt/) | [PDF](https://arxiv.org/pdf/2104.02735.pdf) | [Data](https://caltech.box.com/s/3fd43vl82oa6zrcouy49fh90kokdc9pl)
+[Webpage](http://imaging.cms.caltech.edu/vvt/) | [PDF](https://arxiv.org/pdf/2104.02735.pdf) | [Data](https://caltech.box.com/s/3fd43vl82oa6zrcouy49fh90kokdc9pl)
 
 Berthy T. Feng, Alexander C. Ogren, Chiara Daraio, Katherine L. Bouman. "Visual Vibration Tomography: Estimating Interior Material Properties from Monocular Video." In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2022 (**Oral**).
 
