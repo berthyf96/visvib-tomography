@@ -1,10 +1,11 @@
 # Visual Vibration Tomography
-[Project Website](http://imaging.cms.caltech.edu/vvt/) | [PDF](https://arxiv.org/pdf/2104.02735.pdf)
+[Project Page](http://imaging.cms.caltech.edu/vvt/) | [PDF](https://arxiv.org/pdf/2104.02735.pdf)
 
 Berthy T. Feng, Alexander C. Ogren, Chiara Daraio, Katherine L. Bouman. "Visual Vibration Tomography: Estimating Interior Material Properties from Monocular Video." In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR), 2022 (**Oral**).
 
 ## Setup
-### Create conda environment
+The codebase is written in Python and doesn't require many special packages, except the Python wrapper for `FEniCS` known as `DOLFIN`.
+### Create Conda environment
 ```
 $ conda update conda
 $ conda create -n vvt python=3.7
@@ -12,29 +13,18 @@ $ conda activate vvt
 $ conda config --add channels conda-forge
 $ conda config --add channels anaconda
 ```
-### Install dependencies
+
+### Install requirements
+Note that Conda's environment solving step could take a while.
 ```
-$ conda config --add channels conda-forge
-$ conda install -c conda-forge fenics
-$ conda install -c conda-forge jupyter matplotlib==3.4.2 tqdm opencv imageio
-$ conda install -c anaconda scipy
+$ conda install --file requirements.txt
 $ pip install pyrtools
 ```
-* python 3.7
-* conda install -c conda-forge fenics
-* conda install -c conda-forge jupyter
-* conda install h5py
-* conda install -c conda-forge matplotlib==3.4.2 (2.2.4 for animation)
-* conda install -c conda-forge tqdm
-* conda install -c conda-forge opencv
-* conda install -c anaconda scipy
-* conda install -c conda-forge imageio
-* pip install pyrtools
 
 ## Demos
 ### Demo: simulated cube
 The notebook `demo1_simulated_cube.ipynb` walks through end-to-end estimation
-from an input video. Simulated cube data can be downloaded from [Box](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl). The demo notebook specifically works with `defect03`.
+from an input video. Please download [simulated cube data](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl) and place them in the `simulated_data` folder. The demo specifically works with `defect03`.
 
 <p align='center'>
     <img src="./assets/nmodes_1.png" alt="Reconstructions" width="600"/>
@@ -52,21 +42,12 @@ of the same object, saving modal observations from each one.
 2. `demo2.2_real_cube_inference.ipynb` takes the modal observations from multiple
 videos and averages them to solve for material properties.
 
-The real Jello cube data can be downloaded from [Box](https://caltech.box.com/s/ii4qejdnypagmg18pbi2usk1i4hky41c). Modal observations are included, so step (1) can be skipped.
+Please download the real [Jello cube data](https://caltech.box.com/s/ii4qejdnypagmg18pbi2usk1i4hky41c) and place them in the `real_data` folder. Modal observations from all three videos are already provided, so you can skip step (1).
 
 <p align='center'>
     <img src="./assets/real_cube_recon.png" alt="Jello Cube Recon." width="300"/>
 </p>
 <p align='center'>(Paper Fig. 11) Reconstructed material properties.</p>
-
-## Animations
-To make an animated video from COMSOL transient analysis results, run
-```
-$ python make_comsol_animation.py {OBJ_NAME} {SIM_NAME}
-```
-where `OBJ_NAME` is the cube sample (e.g., "defect_01"), and `SIM_NAME` is the transient-analysis name (e.g., "top_front_pluck"). The script writes a GIF named `transient.gif` in the same folder that contains the `transient.mat` file.
-
-**WARNING:** The animation script was tested with `matplotlib==2.2.4` and is not guaranteed to work for other versions.
 
 ## Simulated Dataset
 The [simulated dataset](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl) 
@@ -95,16 +76,18 @@ the true full-field modes of the object.
 An animated video takes up a lot of storage (~1.2 GB), so we provide a
 limited number of pre-written videos, specifically for: `defect_03`, `defect_08`, and `damped_defect_03`.
 
+## Animation Script
+To make an animated video from COMSOL transient analysis results, run
+```
+$ python make_comsol_animation.py {OBJ_NAME} {SIM_NAME}
+```
+where `OBJ_NAME` is the cube sample (e.g., "defect_01"), and `SIM_NAME` is the transient-analysis name (e.g., "top_front_pluck"). The script writes a GIF named `transient.gif` in the same folder that contains the `transient.mat` file. To speed up motion extraction, you can crop the GIF frames tightly to the cube.
+
 ## Notes
-The easiest results to reproduce with this repo are reconstructions for `simulated_data/defect_03` and `real_data/jello_cube`. The paper includes figures for other cases, including damped cubes and simulated/real drums.
+The easiest results to reproduce with this repo are reconstructions for `simulated_data/defect_03` and `real_data/jello_cube`. The paper includes figures for additional cases, including damped cubes and simulated/real drums.
 
 ### Damped cubes
 The best way to work with damped cubes (e.g., `simulated_data/damped_defect01`) is to follow the process for the real Jello cube, i.e., with `demo2.1_real_cube_mode_extraction.ipynb` and `demo2.2_real_cube_inference.ipynb`. The video names and FPS will have to be specified accordingly, and the modal observations require some amount of qualitative hand-selection.
 
 ### Drums
-For clarity, we provide code for working with cubes. Please contact bfeng@caltech.edu if you would like code for working with drums or other geometries.
-
-## TODOs
-* Make Conda environment on MacBook
-* Test animation script
-* Test notebooks
+For clarity, we only provide code for working with cubes. Please contact bfeng@caltech.edu if you would like code for working with drums or other geometries.
