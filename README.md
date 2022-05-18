@@ -76,6 +76,18 @@ the true full-field modes of the object.
 An animated video takes up a lot of storage (~1.2 GB), so we provide a
 limited number of pre-written videos, specifically for: `defect_03`, `defect_08`, and `damped_defect_03`.
 
+## Custom Cube Simulation
+For reference, we provide some files useful for making your own simulated 
+cube data.
+
+### COMSOL analyses
+`comsol/template.mph` is the COMSOL file that can be edited to make your
+own cube forward model. For example, you can change the dimensions of the box,
+defect shape and location, and material properties.
+
+`comsol/run_comsol_sim.m` takes the COMSOL file, run transient analyses
+and a modal analysis, and saves the results of these analyses.
+
 ## Animation Script
 To make an animated video from COMSOL transient analysis results, run
 ```
