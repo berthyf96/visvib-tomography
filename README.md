@@ -47,7 +47,7 @@ Please download the real [Jello cube data](https://caltech.box.com/s/ii4qejdnypa
 <p align='center'>
     <img src="./assets/real_cube_recon.png" alt="Jello Cube Recon." width="300"/>
 </p>
-<p align='center'>(Paper Fig. 11) Reconstructed material properties.</p>
+<p align='center'>(Paper Fig. 11) Reconstructed material properties of a real Jello cube.</p>
 
 ## Simulated Dataset
 The [simulated dataset](https://caltech.box.com/s/j6dhsgeuqe89g4fz7qz8aggaag5r4psl) 
