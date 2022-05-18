@@ -3,14 +3,29 @@ from scipy.sparse import csr_matrix
 from scipy.optimize import nnls
 from tqdm import tqdm
 
-import vvt.utils as utils
-
 def get_solver(cube, proj_mat):
-    '''Initializes a Solver for the given Cube and projection matrix.'''
-    # Laplacian operator
+    """
+    Initialize a Solver object for the given Cube and projection matrix.
+
+    Parameters
+    ----------
+    cube: Cube
+        The cube model to be used for inference.
+    proj_mat: np.ndarray of shape (2, 3)
+        The 3D-to-2D projection matrix that determines how world-space motion
+        is projected onto image-space.
+    
+    Returns
+    -------
+    solver: Solver
+        A Solver object that can be used to assemble global stiffness/mass
+        matrices given estimates of material properties, evaluate loss 
+        functions, update decision variables, etc.
+    """
+    # Laplacian operator:
     L = laplacian_matrix_3d(cube.nx, cube.ny, cube.nz)
 
-    # voxel matrices
+    # Voxel matrices:
     n_voxels = len(cube.element_stiffness_mats)
     element_stiffness_mats, element_mass_mats = [], []
     for (Ke, Me) in tqdm(zip(cube.element_stiffness_mats,
@@ -21,7 +36,7 @@ def get_solver(cube, proj_mat):
         element_stiffness_mats.append(Ke_free.astype('float32'))
         element_mass_mats.append(Me_free.astype('float32'))
 
-    # projection matrices
+    # Projection matrices:
     n_vts = cube.n_dofs // 3
     proj_mat_normalized = proj_mat / abs(proj_mat).max()
     P = full_projection_matrix(n_vts, proj_mat_normalized)
@@ -37,11 +52,23 @@ def get_solver(cube, proj_mat):
     return s
 
 def laplacian_matrix_3d(nx, ny, nz):
-    '''Return a Laplacian matrix (L) for a 3d array.
-    L[i, j] = 1 iff i != j are adjacent in the 3d array of size
-    (nx, ny, nz).
+    """
+    Construct the Laplacian matrix for a 3D grid of the given dimensions.
+    L[i, j] = 1 iff i != j are adjacent entries in the 3D array.
     L[i, i] = -deg(i).
-    '''
+
+    Parameters
+    ----------
+    nx, ny, nz: int
+        The width, height, and depth of the 3D grid.
+
+    Returns
+    -------
+    L: np.ndarray of shape (nx*ny*nz, nx*ny*nz)
+        The Laplacian matrix, which contains information about which entries
+        in the 3D grid are adjacent and the degree (i.e., number of adjacent
+        elements) of each entry.
+    """
     def _index(x, y, z):
         return (nx*ny)*z + nx*y + x
     nelems = nx * ny * nz
@@ -72,22 +99,31 @@ def laplacian_matrix_3d(nx, ny, nz):
     return L
 
 def full_projection_matrix(n_total_pts, proj_mat):
-    '''Create a full projection matrix that maps all DOFs onto image-space.
-    Inputs:
-        n_total_pts -- total number of points that would be mapped from
-            3d to 2d.
-        proj_mat (2, 3) -- 3d-to-2d projection matrix.
-    Output:
-        P (N_DOFS, N_DOFS) -- full projection matrix, that maps DOFs in 3d
-            to 2d image-space, where the 3rd dimension is always 0.
-    '''
+    """
+    Create a full projection matrix that maps all DOFs onto imag-space.
+
+    Parameters
+    ----------
+    n_total_pts: int
+        Total number of points that would be mapped from 3D to 2D.
+    proj_mat: np.ndarray of shape (2, 3)
+        3D-to-2D projection matrix.
+
+    Returns
+    -------
+    P: np.ndarray of shape (N_DOFS, N_DOFS)
+        The full projection matrix, which maps DOFs in 3D world-space to
+        2D image-space (where the 3rd dimension is always 0).
+    """
     P = np.kron(
         np.eye(n_total_pts, dtype=int),
         np.r_[proj_mat, np.zeros((1, 3))])
     return P
 
 def full_mask_matrix(n_dofs, seen_dofs):
-    '''Return a binary matrix with 1s for DOFs seen in image-space.'''
+    """
+    Construct a binary matrix with 1s for DOFs seen in image-space.
+    """
     G = np.zeros((n_dofs, n_dofs))
     G[seen_dofs[::3], seen_dofs[::3]] = 1
     G[seen_dofs[1::3], seen_dofs[1::3]] = 1
@@ -96,14 +132,25 @@ def full_mask_matrix(n_dofs, seen_dofs):
 class Solver:
     def __init__(self, element_stiffness_mats, element_mass_mats,
                  laplacian, P, G):
-        '''Initialize Solver instance.
-        Params:
-            element_stiffness_mats: element stiffness matrices (of non-bc dofs).
-            element_mass_mats: element mass matrices (of non-bc dofs).
-            laplacian: Laplacian operator matrix.
-            P: projection matrix from 3D to 2D.
-            G: masking matrix that extracts seen DOFs in 2D space.
-        '''
+        """
+        Initialize Solver instance.
+
+        Parameters
+        ----------
+        element_stiffness_mats: list of scipy.sparse.coo_matrix
+            A list of the local stiffness matrix of each voxel in the cube
+            model. The matrix is assumed to contain free, or non-BC, DOFS only.
+        element_stiffness_mats: list of scipy.sparse.coo_matrix
+            A list of the local mass matrix of each voxel in the cube
+            model. The matrix is assumed to contain free, or non-BC, DOFS only.
+        laplacian: np.ndarray of shape (N_VOXELS, N_VOXELS)
+            The Laplacian operator matrix that describes which voxels are 
+            adjacent.
+        P, G: np.ndarray of shape (N_FREE_DOFS, N_FREE_DOFS)
+            The projection matrices. P is the 3D-to-2D projection matrix for
+            all free DOFs, and G is the masking matrix that extracts only the
+            DOFS seen in 2D image-space.
+        """
         n_free_dofs = element_stiffness_mats[0].shape[0]
         self.n_free_dofs = n_free_dofs
         
@@ -129,8 +176,9 @@ class Solver:
         self.k = len(evals_observed)
 
     def _constraint_loss(self, Ut, evalst, Kt, Mt, dual_vars):
-        '''Returns the unweighted and dual-var-weighted constraint
-        losses.'''
+        """
+        Calculate the unweighted and dual-variable-weighted constraint losses.
+        """
         constr_loss_unw, constr_loss = 0., 0.
         for i in range(self.k):
             Di = Kt - evalst[i] * Mt
@@ -142,6 +190,9 @@ class Solver:
         return constr_loss_unw, constr_loss
 
     def _data_loss(self, Ut):
+        """
+        Calculate the data-fit loss for the given estimated full-field modes.
+        """
         data_loss = 0.
         for i in range(self.k):
             loss_i = np.linalg.norm(
@@ -151,19 +202,56 @@ class Solver:
         return data_loss
 
     def _eigval_data_loss(self, evalst):
+        """
+        Calculate the data-fit loss for the given estimated eigenvalues.
+        """
         loss = np.linalg.norm(evalst - self.evals_observed)**2
         loss *= (0.5 / self.k)
         return loss
 
     def _tsv(self, x):
+        """
+        Calculate the total squared variation of the estimated voxel-wise
+        material-property values.
+        """
         loss = 0.5 * np.linalg.norm(self.L @ x)**2
         return loss
 
     def _scale_reg_loss(self, x, x_mean):
+        """
+        Calculate the scale-regularization loss (i.e., deviation from a 
+        mean value).
+        """
         loss = 0.5 * (np.mean(x) - x_mean)**2
         return loss
 
     def loss(self, Ut, evalst, Kt, Mt, wt, vt, dual_vars):
+        """
+        Evaluate all the constitutent loss functions given the current
+        estimates of the decision variables.
+
+        Parameters
+        ----------
+        Ut: np.ndarray of shape (N_FREE_DOFS, N_INPUT_MODES)
+            Estimated full-field modes.
+        evalst: np.ndarray of shape (N_INPUT_MODES)
+            Estimated eigenvalues (usually these aren't too different from
+            the observed eigenvalues).
+        Kt, Mt: scipy.sparse.csr.csr_matrix
+            The global stiffness matrix and global mass matrix, given
+            the current the estimated material-property values.
+        wt, vt: np.ndarray of shape (N_VOXELS)
+            Estimated Young's modulus (wt) and density (vt) value of each voxel.
+        dual_vars: np.ndarray of shape (N_INPUT_MODES)
+            The value of the dual variable on each mode constraint.
+
+        Returns
+        -------
+        unweighted_loss_dict: dict
+            A dictionary of the unweighted losses.
+        loss_dict: dict
+            A dictionary of the weighted losses.
+        """
         alpha_u = self.params['alpha_u']
         alpha_e = self.params['alpha_e']
         alpha_w = self.params['alpha_w']
@@ -173,26 +261,26 @@ class Solver:
         w_mean = self.params['w_mean']
         v_mean = self.params['v_mean']
 
-        # constraint loss
+        # Constraint loss:
         constr_loss_unw, constr_loss = self._constraint_loss(
             Ut, evalst, Kt, Mt, dual_vars)
 
-        # data-matching loss
+        # Data-fit loss:
         data_loss_unw = self._data_loss(Ut)
 
-        # eigenvalue data-matching loss
+        # Eigenvalue data-fit loss:
         eigval_data_loss_unw = self._eigval_data_loss(evalst)
 
-        # TSV regularization
+        # TSV regularization:
         tsv_w_unw = self._tsv(wt)
         tsv_v_unw = self._tsv(vt)
 
-        # scale regularization
+        # scale regularization:
         w_mean_loss_unw = self._scale_reg_loss(wt, w_mean)
         v_mean_loss_unw = self._scale_reg_loss(vt, v_mean)
         scale_reg_loss_unw = w_mean_loss_unw + v_mean_loss_unw
 
-        # total unweighted loss
+        # Total unweighted loss:
         total_loss_unw = (constr_loss_unw + data_loss_unw
             + eigval_data_loss_unw + tsv_w_unw + tsv_v_unw
             + scale_reg_loss_unw)
@@ -207,7 +295,7 @@ class Solver:
             'total': total_loss_unw
         }
 
-        # weighted losses
+        # Weighted losses:
         data_loss = alpha_u * data_loss_unw
         eigval_data_loss = alpha_e * eigval_data_loss_unw
         tsv_w = alpha_w * tsv_w_unw
@@ -230,6 +318,27 @@ class Solver:
         return unweighted_loss_dict, loss_dict
     
     def solve_w_v(self, Ut, evalst, dual_vars, enforce_pos=False):
+        """
+        Solve for the optimal material-property values, given the estimated
+        full-field modes.
+
+        Parameters
+        ----------
+        Ut: np.ndarray of shape (N_FREE_DOFS, N_INPUT_MODES)
+            Estimated full-field modes.
+        evalst: np.ndarray of shape (N_INPUT_MODES)
+            Estimated eigenvalues (usually these aren't too different from
+            the observed eigenvalues).
+        dual_vars: np.ndarray of shape (N_INPUT_MODES)
+            The value of the dual variable on each mode constraint.
+        enforce_pos: bool, default=False
+            Whether to enforce a positivty constraint on the values in w, v.
+
+        Returns
+        -------
+        wv: np.ndarray of shape (N_VOX * 2)
+            The optimal w and v vectors, concatenated.
+        """
         alpha_w = self.params['alpha_w']
         alpha_v = self.params['alpha_v']
         alpha_w_mean = self.params['alpha_w_mean']
@@ -241,7 +350,7 @@ class Solver:
         m = self.n_weights
         n = self.n_free_dofs
         
-        # constraint A
+        # Constraint A:
         A_constr = np.zeros((k*n, 2*m))
         for l in range(k):
             ul = Ut[:,l]
@@ -253,18 +362,18 @@ class Solver:
             # Plug this A_l matrix into the full A_constr matrix.
             A_constr[(l*n):(l+1)*n] = np.sqrt(dual_vars[l] / k) * A_l
 
-        # smoothness regularization A
+        # Smoothness regularization A:
         A_reg = np.block([
             [np.sqrt(alpha_w)*self.L,   np.zeros((m, m))],
             [np.zeros((m, m)),          np.sqrt(alpha_v)*self.L]
         ])
 
-        # mean regularization A
+        # Mean regularization A:
         A_mean = np.block([
             [(np.sqrt(alpha_w_mean)/m) * np.ones(m), np.zeros(m)],
             [np.zeros(m), (np.sqrt(alpha_v_mean)/m) * np.ones(m)]
         ])
-        # mean regularization b
+        # Mean regularization b:
         b_mean = np.array([np.sqrt(alpha_w_mean) * w_mean,
                            np.sqrt(alpha_v_mean) * v_mean])
 
@@ -281,6 +390,26 @@ class Solver:
             return np.linalg.solve(Ap, bp)
 
     def solve_U(self, Kt, Mt, evalst, dual_vars):
+        """
+        Solve for the optimal full-field modes, given the estimated stiffness
+        and mass matrices and eigenvalues.
+
+        Parameters
+        ----------
+        Kt, Mt: scipy.sparse.csr.csr_matrix
+            The global stiffness matrix and global mass matrix, given
+            the current the estimated material-property values.
+        evalst: np.ndarray of shape (N_INPUT_MODES)
+            Estimated eigenvalues (usually these aren't too different from
+            the observed eigenvalues).
+        dual_vars: np.ndarray of shape (N_INPUT_MODES)
+            The value of the dual variable on each mode constraint.
+
+        Returns
+        -------
+        Ustar: np.ndarray of shape (N_FREE_DOFS, N_INPUT_MODES)
+            The optimal full-field modes (free DOFs only).
+        """
         alpha_u = self.params['alpha_u']
         Ustar = np.zeros(self.Uo.shape, dtype=self.Uo.dtype)
         for i in range(self.k):
@@ -291,6 +420,20 @@ class Solver:
         return Ustar
     
     def solve_evals(self, Kt, Mt, Ut, dual_vars):
+        """
+        Solve for the optimal eigenvalues, given the estimated stiffness
+        and mass matrices and full-field modes.
+
+        Parameters
+        ----------
+        Kt, Mt: scipy.sparse.csr.csr_matrix
+            The global stiffness matrix and global mass matrix, given
+            the current the estimated material-property values.
+        Ut: np.ndarray of shape (N_FREE_DOFS, N_INPUT_MODES)
+            Estimated full-field modes.
+        dual_vars: np.ndarray of shape (N_INPUT_MODES)
+            The value of the dual variable on each mode constraint.
+        """
         alpha_e = self.params['alpha_e']
         evals_star = np.zeros(self.k)
         for i in range(self.k):
@@ -302,6 +445,31 @@ class Solver:
         return evals_star
 
     def update_dual_vars(self, Kt, Mt, Ut, evalst, dual_vars, eta):
+        """
+        Update the dual variables according to the quadratic-penalty
+        update rule.
+
+        Parameters
+        ----------
+        Kt, Mt: scipy.sparse.csr.csr_matrix
+            The global stiffness matrix and global mass matrix, given
+            the current the estimated material-property values.
+        Ut: np.ndarray of shape (N_FREE_DOFS, N_INPUT_MODES)
+            Estimated full-field modes.
+        evalst: np.ndarray of shape (N_INPUT_MODES)
+            Estimated eigenvalues (usually these aren't too different from
+            the observed eigenvalues).
+        dual_vars: np.ndarray of shape (N_INPUT_MODES)
+            The current value of the dual variable on each mode constraint
+            (before updating).
+        eta: float, >=0
+            The update rate.
+
+        Returns
+        -------
+        new_dual_vars: np.ndarray of shape (N_INPUT_MODES)
+            Updated dual variables.
+        """
         new_dual_vars = dual_vars.copy()
         for i in range(self.k):
             Di = Kt - evalst[i] * Mt
